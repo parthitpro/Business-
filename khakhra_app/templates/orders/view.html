@@ -1,163 +1,190 @@
 {% extends "base.html" %}
 
-{% block title %}Order #{{ order.id }} - Khakhra Business{% endblock %}
+{% block title %}Order #{{ order.id }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>📋 Order #{{ order.id }}</h2>
-    <div>
-        {% if order.status.value == 'pending' %}
-        <a href="{{ url_for('orders.edit_order', id=order.id) }}" class="btn btn-primary">
-            ✏️ Edit Order
-        </a>
-        {% else %}
-        <button class="btn btn-secondary" disabled title="Locked: Order is in production">
-            🔒 Edit Locked
-        </button>
-        {% endif %}
-        
-        <a href="{{ url_for('orders.list_orders') }}" class="btn btn-outline-secondary">
-            ← Back to List
-        </a>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Order Details -->
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Order Details</h5>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Order #{{ order.id }}</h2>
+                <div>
+                    <a href="{{ url_for('orders.order_list') }}" class="btn btn-secondary">Back to Orders</a>
+                    {% if order.status.value == 'pending' %}
+                    <a href="{{ url_for('orders.edit_order', order_id=order.id) }}" class="btn btn-primary">Edit Order</a>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <strong>Customer:</strong><br>
-                        {{ order.customer.name }}<br>
-                        {{ order.customer.phone }}<br>
-                        {{ order.customer.address or 'No address' }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Order Info:</strong><br>
-                        Type: <span class="badge bg-{{ 'info' if order.order_type.value == 'retail' else 'warning' }}">
-                            {{ order.order_type.value|title }}
-                        </span><br>
-                        Date: {{ order.order_date.strftime('%d/%m/%Y %H:%M') }}<br>
-                        Status: <span class="badge badge-{{ order.status.value }}">
-                            {{ order.status.value|title }}
-                        </span>
+
+            <!-- Order Status Badges -->
+            <div class="mb-3">
+                <span class="badge bg-{{ 'success' if order.status.value == 'delivered' else 'info' }} fs-6">
+                    Status: {{ order.status.value|upper }}
+                </span>
+                <span class="badge bg-{{ 'success' if order.payment_status.value == 'paid' else 'warning' }} fs-6">
+                    Payment: {{ order.payment_status.value|upper }}
+                </span>
+                <span class="badge bg-{{ 'primary' if order.order_type.value == 'retail' else 'dark' }} fs-6">
+                    {{ order.order_type.value|upper }}
+                </span>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Customer Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Name:</strong><br>
+                            {{ order.customer.name }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Phone:</strong><br>
+                            {{ order.customer.phone }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Address:</strong><br>
+                            {{ order.customer.address or 'N/A' }}
+                        </div>
                     </div>
                 </div>
-                
-                <hr>
-                
-                <h6>Items:</h6>
-                <div class="table-responsive">
-                    <table class="table">
+            </div>
+
+            <!-- Order Items Table -->
+            <div class="card mb-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Order Items</h5>
+                    <small class="text-muted">Order Date: {{ order.order_date.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
                         <thead>
                             <tr>
+                                <th>#</th>
                                 <th>Product</th>
                                 <th>Weight</th>
-                                <th>Qty</th>
-                                <th>Price</th>
-                                <th>Subtotal</th>
+                                <th>Quantity</th>
+                                <th>Price (₹)</th>
+                                <th>Subtotal (₹)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for item in order.items %}
                             <tr>
+                                <td>{{ loop.index }}</td>
                                 <td>{{ item.variant.product.name }}</td>
                                 <td>{{ item.variant.weight_label }}</td>
                                 <td>{{ item.quantity }}</td>
-                                <td>₹{{ "%.2f"|format(item.price_at_time|float) }}</td>
-                                <td>₹{{ "%.2f"|format(item.subtotal|float) }}</td>
+                                <td>₹{{ "%.2f"|format(item.price_at_time) }}</td>
+                                <td>₹{{ "%.2f"|format(item.subtotal) }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
-                            <tr>
-                                <th colspan="4" class="text-end">Grand Total:</th>
-                                <th>₹{{ "%.2f"|format(order.total_amount|float) }}</th>
+                            <tr class="table-dark">
+                                <td colspan="5" class="text-end"><strong>Grand Total:</strong></td>
+                                <td><strong>₹{{ "%.2f"|format(order.total_amount) }}</strong></td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
             </div>
+
+            <!-- Actions Card -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Order Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Status Update -->
+                        <div class="col-md-6">
+                            <h6>Update Status</h6>
+                            <form method="POST" action="{{ url_for('orders.update_status', order_id=order.id) }}" class="d-flex gap-2">
+                                <select name="status" class="form-select" required>
+                                    <option value="pending" {{ 'selected' if order.status.value == 'pending' }}>Pending</option>
+                                    <option value="manufacturing" {{ 'selected' if order.status.value == 'manufacturing' }}>Manufacturing</option>
+                                    <option value="ready" {{ 'selected' if order.status.value == 'ready' }}>Ready</option>
+                                    <option value="delivered" {{ 'selected' if order.status.value == 'delivered' }}>Delivered</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </form>
+                        </div>
+
+                        <!-- Payment Status -->
+                        <div class="col-md-6">
+                            <h6>Update Payment</h6>
+                            <form method="POST" action="{{ url_for('orders.update_payment', order_id=order.id) }}" class="d-flex gap-2">
+                                <select name="payment_status" class="form-select" required>
+                                    <option value="unpaid" {{ 'selected' if order.payment_status.value == 'unpaid' }}>Unpaid</option>
+                                    <option value="paid" {{ 'selected' if order.payment_status.value == 'paid' }}>Paid</option>
+                                </select>
+                                <button type="submit" class="btn btn-success">Update</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Delete Button -->
+                    {% if order.status.value in ['pending', 'ready'] %}
+                    <hr>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            Delete Order
+                        </button>
+                        <small class="text-muted ms-2">(Only Pending and Ready orders can be deleted)</small>
+                    </div>
+                    {% else %}
+                    <hr>
+                    <div class="mt-3">
+                        <button class="btn btn-danger" disabled title="Locked: Order is in production">
+                            Delete Order
+                        </button>
+                        <small class="text-muted ms-2">(Cannot delete {{ order.status.value }} orders)</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
-    
-    <!-- Actions Panel -->
-    <div class="col-md-4">
-        <!-- Status Update -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Update Status</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('orders.update_status', id=order.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('orders.delete_order', order_id=order.id) }}">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Delete Order #{{ order.id }}</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-danger"><strong>Warning:</strong> This will soft-delete the order. It will be moved to Trash.</p>
+                    
                     <div class="mb-3">
-                        <select name="status" class="form-select" required>
-                            {% for status in ['pending', 'manufacturing', 'ready', 'delivered'] %}
-                            <option value="{{ status }}" {% if order.status.value == status %}selected{% endif %}>
-                                {{ status|title }}
-                            </option>
-                            {% endfor %}
+                        <label class="form-label">Reason for Deletion</label>
+                        <select name="delete_reason" class="form-select" required>
+                            <option value="">-- Select Reason --</option>
+                            <option value="Customer Cancelled">Customer Cancelled</option>
+                            <option value="Late Delivery">Late Delivery</option>
+                            <option value="Wrong Item">Wrong Item</option>
+                            <option value="Duplicate Order">Duplicate Order</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">Update Status</button>
-                </form>
-                
-                <div class="mt-3">
-                    <strong>Current Status:</strong>
-                    <span class="badge badge-{{ order.status.value }} fs-6">{{ order.status.value|title }}</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Payment Status -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-white">
-                <h5 class="mb-0">Payment Status</h5>
-            </div>
-            <div class="card-body">
-                <form method="POST" action="{{ url_for('orders.update_payment', id=order.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    
                     <div class="mb-3">
-                        <select name="payment_status" class="form-select" required>
-                            {% for status in ['unpaid', 'paid'] %}
-                            <option value="{{ status }}" {% if order.payment_status.value == status %}selected{% endif %}>
-                                {{ status|title }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <label class="form-label">Additional Note (Optional)</label>
+                        <textarea name="delete_note" class="form-control" rows="3"></textarea>
                     </div>
-                    <button type="submit" class="btn btn-success w-100">Update Payment</button>
-                </form>
-                
-                <div class="mt-3">
-                    <strong>Current:</strong>
-                    <span class="badge badge-{{ order.payment_status.value }} fs-6">
-                        {{ order.payment_status.value|title }}
-                    </span>
                 </div>
-            </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Delete</button>
+                </div>
+            </form>
         </div>
-        
-        <!-- Delete Button -->
-        {% if order.status.value in ['pending', 'ready'] %}
-        <div class="card shadow-sm border-danger">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0">Danger Zone</h5>
-            </div>
-            <div class="card-body">
-                <p class="text-muted small">Delete this order (soft delete with reason).</p>
-                <a href="{{ url_for('orders.delete_order', id=order.id) }}" class="btn btn-outline-danger w-100">
-                    🗑️ Delete Order
-                </a>
-            </div>
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

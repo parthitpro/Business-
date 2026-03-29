@@ -11,3 +11,8 @@ Press CTRL+C to quit
  * Debugger PIN: 547-089-425
 127.0.0.1 - - [29/Mar/2026 07:25:28] "GET /orders/create HTTP/1.1" 200 -
 127.0.0.1 - - [29/Mar/2026 07:25:30] "GET /orders/api/variants/1?order_type=retail HTTP/1.1" 200 -
+ * Detected change in '/workspace/khakhra_app/blueprints/orders.py', reloading
+Database tables created successfully!
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 547-089-425
