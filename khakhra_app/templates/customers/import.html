@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Import Customers - Khakhra Business{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">📥 Import Customers from CSV</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>CSV Format:</strong> Your CSV should have columns: <code>Name</code>, <code>Phone</code>, <code>Address</code><br>
+                    <small>Compatible with Google Contacts export format.</small>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select CSV File</label>
+                        <input type="file" class="form-control" id="file" name="file" 
+                               accept=".csv" required>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            Upload & Preview
+                        </button>
+                        <a href="{{ url_for('customers.list_customers') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

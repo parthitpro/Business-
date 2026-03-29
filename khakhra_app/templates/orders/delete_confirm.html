@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Order #{{ order.id }} - Khakhra Business{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">🗑️ Delete Order #{{ order.id }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> This will soft-delete the order. 
+                    The order will be moved to the trash and can be restored later.
+                </div>
+                
+                <div class="mb-3">
+                    <strong>Order Details:</strong><br>
+                    Customer: {{ order.customer.name }}<br>
+                    Total: ₹{{ "%.2f"|format(order.total_amount|float) }}<br>
+                    Status: <span class="badge badge-{{ order.status.value }}">{{ order.status.value|title }}</span>
+                </div>
+                
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    
+                    <div class="mb-3">
+                        <label for="delete_reason" class="form-label">Delete Reason *</label>
+                        <select class="form-select" id="delete_reason" name="delete_reason" required>
+                            <option value="">Select Reason...</option>
+                            <option value="Customer Cancelled">Customer Cancelled</option>
+                            <option value="Late Delivery">Late Delivery</option>
+                            <option value="Wrong Item">Wrong Item</option>
+                            <option value="Duplicate">Duplicate Order</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="delete_note" class="form-label">Additional Note</label>
+                        <textarea class="form-control" id="delete_note" name="delete_note" 
+                                  rows="3" placeholder="Add any additional details..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            Confirm Delete
+                        </button>
+                        <a href="{{ url_for('orders.view_order', id=order.id) }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

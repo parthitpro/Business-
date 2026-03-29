@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Import Preview - Khakhra Business{% endblock %}
+
+{% block content %}
+<h4 class="mb-4">📋 Import Preview</h4>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">✅ New Customers ({{ new_customers|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if new_customers %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cust in new_customers %}
+                            <tr>
+                                <td>{{ cust.name }}</td>
+                                <td>{{ cust.phone }}</td>
+                                <td>{{ cust.address or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No new customers to add.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">⚠️ Updates ({{ updates|length }})</h5>
+            </div>
+            <div class="card-body">
+                {% if updates %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>New Address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cust in updates %}
+                            <tr>
+                                <td>{{ cust.name }}</td>
+                                <td>{{ cust.phone }}</td>
+                                <td>{{ cust.address or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No existing customers to update.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center">
+    <form method="POST" action="{{ url_for('customers.confirm_import') }}" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+        <button type="submit" class="btn btn-success btn-lg">
+            ✅ Confirm Import
+        </button>
+    </form>
+    <a href="{{ url_for('customers.import_csv') }}" class="btn btn-outline-secondary btn-lg ms-2">
+        Cancel
+    </a>
+</div>
+{% endblock %}

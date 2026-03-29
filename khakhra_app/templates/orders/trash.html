@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Deleted Orders - Khakhra Business{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🗑️ Deleted Orders (Trash)</h2>
+    <a href="{{ url_for('orders.list_orders') }}" class="btn btn-outline-primary">
+        ← Back to Active Orders
+    </a>
+</div>
+
+{% if orders %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Deleted Date</th>
+                        <th>Reason</th>
+                        <th>Note</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.customer.name }}</td>
+                        <td>₹{{ "%.2f"|format(order.total_amount|float) }}</td>
+                        <td>{{ order.deleted_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ order.delete_reason or '-' }}</td>
+                        <td>{{ order.delete_note[:50] + '...' if order.delete_note and order.delete_note|length > 50 else order.delete_note or '-' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('orders.restore_order', id=order.id) }}" 
+                                  class="d-inline" onsubmit="return confirm('Restore this order?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                                <button type="submit" class="btn btn-sm btn-outline-success">
+                                    ♻️ Restore
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    No deleted orders found.
+</div>
+{% endif %}
+{% endblock %}

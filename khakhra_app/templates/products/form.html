@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if product else 'Add' }} Product - Khakhra Business{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">{{ '✏️ Edit' if product else '➕ Add' }} Product</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="productForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    
+                    <div class="mb-4">
+                        <label for="name" class="form-label">Product Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ product.name if product else '' }}" required>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6 class="mb-3">Product Variants</h6>
+                    <div id="variantsContainer">
+                        <!-- Variants will be added here dynamically -->
+                    </div>
+                    
+                    <button type="button" class="btn btn-outline-primary mb-4" onclick="addVariant()">
+                        ➕ Add Variant
+                    </button>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            {{ 'Update' if product else 'Add' }} Product
+                        </button>
+                        <a href="{{ url_for('products.list_products') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let variantCount = 0;
+
+// Initial variants data (if editing)
+const initialVariants = [
+    {% if product and product.variants %}
+    {% for variant in product.variants %}
+    {
+        weight: '{{ variant.weight_label }}',
+        retail: '{{ variant.retail_price }}',
+        wholesale: '{{ variant.wholesale_price }}'
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+    {% endif %}
+];
+
+function addVariant(weight='', retail='', wholesale='') {
+    variantCount++;
+    const container = document.getElementById('variantsContainer');
+    
+    const row = document.createElement('div');
+    row.className = 'row mb-3 variant-row';
+    row.innerHTML = `
+        <div class="col-md-3">
+            <input type="text" class="form-control" name="weight[]" 
+                   placeholder="Weight (e.g., 200g)" 
+                   value="${weight}" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" step="0.01" class="form-control" name="retail_price[]" 
+                   placeholder="Retail Price" 
+                   value="${retail}" required>
+        </div>
+        <div class="col-md-3">
+            <input type="number" step="0.01" class="form-control" name="wholesale_price[]" 
+                   placeholder="Wholesale Price" 
+                   value="${wholesale}">
+        </div>
+        <div class="col-md-3">
+            <button type="button" class="btn btn-outline-danger" onclick="removeVariant(this)">
+                🗑️ Remove
+            </button>
+        </div>
+    `;
+    
+    container.appendChild(row);
+}
+
+function removeVariant(button) {
+    const row = button.closest('.variant-row');
+    row.remove();
+}
+
+// Initialize form
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial variants if editing
+    if (initialVariants.length > 0) {
+        initialVariants.forEach(v => {
+            addVariant(v.weight, v.retail, v.wholesale);
+        });
+    } else {
+        // Add one empty variant row by default
+        addVariant();
+    }
+});
+</script>
+{% endblock %}
