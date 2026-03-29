@@ -1,264 +1,325 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
-from models import db, Order, OrderItem, Customer, Product, ProductVariant, OrderStatus, PaymentStatus, OrderType
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from models import db, Order, OrderItem, Customer, ProductVariant, Product, OrderStatus, PaymentStatus, OrderType
 from datetime import datetime
+from sqlalchemy import or_
 
-orders_bp = Blueprint('orders', __name__)
+orders_bp = Blueprint('orders', __name__, url_prefix='/orders')
 
 @orders_bp.route('/')
-def list_orders():
-    """List all active orders with filters"""
+def order_list():
+    """List all active orders with filtering and search"""
     status_filter = request.args.get('status', '')
-    search = request.args.get('search', '')
+    search_query = request.args.get('search', '')
     
+    # Base query - exclude soft deleted orders
     query = Order.query.filter_by(is_deleted=False)
     
+    # Apply filters
     if status_filter:
-        query = query.filter_by(status=getattr(OrderStatus, status_filter.upper()))
+        query = query.filter_by(status=status_filter)
     
-    if search:
-        # Search by order ID or customer name
-        try:
-            order_id = int(search)
-            query = query.filter(
-                (Order.id == order_id) | 
-                (Customer.name.ilike(f'%{search}%'))
+    if search_query:
+        # Search by Order ID or Customer Name
+        query = query.join(Customer).filter(
+            or_(
+                Order.id.like(f'%{search_query}%'),
+                Customer.name.ilike(f'%{search_query}%')
             )
-        except ValueError:
-            query = query.join(Customer).filter(Customer.name.ilike(f'%{search}%'))
+        )
     
     orders = query.order_by(Order.order_date.desc()).all()
-    
-    return render_template('orders/list.html', 
+    return render_template('orders/order_list.html', 
                          orders=orders, 
-                         status_filter=status_filter, 
-                         search=search,
-                         statuses=OrderStatus)
+                         statuses=OrderStatus,
+                         current_status=status_filter,
+                         search_query=search_query)
 
 @orders_bp.route('/create', methods=['GET', 'POST'])
 def create_order():
-    """Create new order with dynamic items"""
+    """Create a new order with dynamic items"""
     if request.method == 'POST':
         customer_id = request.form.get('customer_id')
         order_type = request.form.get('order_type')
+        items_data = request.form.get('items_data')  # JSON string from frontend
         
-        if not customer_id or not order_type:
-            flash('Please select customer and order type', 'danger')
+        if not customer_id or not items_data:
+            flash('Customer and at least one item are required.', 'error')
             return redirect(url_for('orders.create_order'))
         
-        # Create order
+        import json
+        try:
+            items = json.loads(items_data)
+        except:
+            flash('Invalid item data.', 'error')
+            return redirect(url_for('orders.create_order'))
+        
+        if not items:
+            flash('At least one item is required.', 'error')
+            return redirect(url_for('orders.create_order'))
+        
+        # Create Order
         order = Order(
             customer_id=customer_id,
-            order_type=getattr(OrderType, order_type.upper()),
+            order_type=OrderType(order_type),
+            order_date=datetime.utcnow(),
             status=OrderStatus.PENDING,
             payment_status=PaymentStatus.UNPAID
         )
-        db.session.add(order)
-        db.session.flush()  # Get order ID
         
-        # Add items
-        product_variant_ids = request.form.getlist('product_variant_id[]')
-        quantities = request.form.getlist('quantity[]')
-        prices = request.form.getlist('price[]')
+        total_amount = 0
+        seen_variants = set()
         
-        total_amount = 0.0
-        
-        for i in range(len(product_variant_ids)):
-            if product_variant_ids[i] and quantities[i]:
-                variant_id = int(product_variant_ids[i])
-                qty = int(quantities[i])
-                price = float(prices[i])
-                subtotal = qty * price
+        for item in items:
+            variant_id = item.get('variant_id')
+            quantity = int(item.get('quantity', 0))
+            price = float(item.get('price', 0))
+            
+            if quantity <= 0:
+                continue
                 
-                item = OrderItem(
-                    order_id=order.id,
-                    product_variant_id=variant_id,
-                    quantity=qty,
-                    price_at_time=price,
-                    subtotal=subtotal
-                )
-                db.session.add(item)
-                total_amount += subtotal
+            # Prevent duplicate variants
+            if variant_id in seen_variants:
+                continue
+            seen_variants.add(variant_id)
+            
+            variant = ProductVariant.query.get(variant_id)
+            if not variant:
+                continue
+            
+            subtotal = quantity * price
+            total_amount += subtotal
+            
+            order_item = OrderItem(
+                order=order,
+                variant=variant,
+                quantity=quantity,
+                price_at_time=price,
+                subtotal=subtotal
+            )
+            db.session.add(order_item)
         
         order.total_amount = total_amount
+        db.session.add(order)
         db.session.commit()
         
-        flash('Order created successfully!', 'success')
-        return redirect(url_for('orders.view_order', id=order.id))
+        flash(f'Order #{order.id} created successfully!', 'success')
+        return redirect(url_for('orders.order_view', order_id=order.id))
     
     # GET request - show form
     customers = Customer.query.order_by(Customer.name).all()
-    products = Product.query.all()
-    
-    # Serialize products for JSON (fixes "not JSON serializable" error)
-    products_data = []
-    for p in products:
-        products_data.append({
-            'id': p.id,
-            'name': p.name
-        })
-    
-    return render_template('orders/form.html', 
+    products = Product.query.filter_by().all()
+    return render_template('orders/order_form.html', 
                          customers=customers, 
-                         products=products_data,
-                         order=None)
+                         products=products,
+                         order_types=OrderType)
 
-@orders_bp.route('/<int:id>')
-def view_order(id):
+@orders_bp.route('/<int:order_id>')
+def order_view(order_id):
     """View order details"""
-    order = Order.query.get_or_404(id)
-    return render_template('orders/view.html', order=order)
+    order = Order.query.get_or_404(order_id)
+    return render_template('orders/order_view.html', order=order)
 
-@orders_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
-def edit_order(id):
+@orders_bp.route('/<int:order_id>/edit', methods=['GET', 'POST'])
+def edit_order(order_id):
     """Edit order - only allowed if status is PENDING"""
-    order = Order.query.get_or_404(id)
+    order = Order.query.get_or_404(order_id)
     
     if order.status != OrderStatus.PENDING:
-        flash('Cannot edit order! Order is already in production.', 'warning')
-        return redirect(url_for('orders.view_order', id=id))
+        flash('Cannot edit order: Order is already in production.', 'error')
+        return redirect(url_for('orders.order_view', order_id=order.id))
     
     if request.method == 'POST':
         customer_id = request.form.get('customer_id')
         order_type = request.form.get('order_type')
+        items_data = request.form.get('items_data')
         
+        import json
+        try:
+            items = json.loads(items_data)
+        except:
+            flash('Invalid item data.', 'error')
+            return redirect(url_for('orders.edit_order', order_id=order.id))
+        
+        # Update order basics
         order.customer_id = customer_id
-        order.order_type = getattr(OrderType, order_type.upper())
+        order.order_type = OrderType(order_type)
         
-        # Remove old items
-        OrderItem.query.filter_by(order_id=order.id).delete()
+        # Remove existing items
+        for item in order.items:
+            db.session.delete(item)
         
-        # Add new items
-        product_variant_ids = request.form.getlist('product_variant_id[]')
-        quantities = request.form.getlist('quantity[]')
-        prices = request.form.getlist('price[]')
+        total_amount = 0
+        seen_variants = set()
         
-        total_amount = 0.0
-        
-        for i in range(len(product_variant_ids)):
-            if product_variant_ids[i] and quantities[i]:
-                variant_id = int(product_variant_ids[i])
-                qty = int(quantities[i])
-                price = float(prices[i])
-                subtotal = qty * price
+        for item in items:
+            variant_id = item.get('variant_id')
+            quantity = int(item.get('quantity', 0))
+            price = float(item.get('price', 0))
+            
+            if quantity <= 0:
+                continue
                 
-                item = OrderItem(
-                    order_id=order.id,
-                    product_variant_id=variant_id,
-                    quantity=qty,
-                    price_at_time=price,
-                    subtotal=subtotal
-                )
-                db.session.add(item)
-                total_amount += subtotal
+            # Prevent duplicate variants
+            if variant_id in seen_variants:
+                continue
+            seen_variants.add(variant_id)
+            
+            variant = ProductVariant.query.get(variant_id)
+            if not variant:
+                continue
+            
+            subtotal = quantity * price
+            total_amount += subtotal
+            
+            order_item = OrderItem(
+                order=order,
+                variant=variant,
+                quantity=quantity,
+                price_at_time=price,
+                subtotal=subtotal
+            )
+            db.session.add(order_item)
         
         order.total_amount = total_amount
         db.session.commit()
         
-        flash('Order updated successfully!', 'success')
-        return redirect(url_for('orders.view_order', id=id))
+        flash(f'Order #{order.id} updated successfully!', 'success')
+        return redirect(url_for('orders.order_view', order_id=order.id))
     
-    # GET request - show form
+    # GET request - prepare form data
     customers = Customer.query.order_by(Customer.name).all()
     products = Product.query.all()
     
-    # Serialize products for JSON (fixes "not JSON serializable" error)
-    products_data = []
-    for p in products:
-        products_data.append({
-            'id': p.id,
-            'name': p.name
+    # Serialize existing items for the form
+    existing_items = []
+    for item in order.items:
+        existing_items.append({
+            'variant_id': item.product_variant_id,
+            'product_name': item.variant.product.name,
+            'weight_label': item.variant.weight_label,
+            'quantity': item.quantity,
+            'price': float(item.price_at_time),
+            'subtotal': float(item.subtotal)
         })
     
-    return render_template('orders/form.html', 
-                         customers=customers, 
-                         products=products_data,
-                         order=order)
+    return render_template('orders/order_form.html',
+                         customers=customers,
+                         products=products,
+                         order_types=OrderType,
+                         order=order,
+                         existing_items=existing_items)
 
-@orders_bp.route('/<int:id>/delete', methods=['GET', 'POST'])
-def delete_order(id):
-    """Soft delete order with reason"""
-    order = Order.query.get_or_404(id)
+@orders_bp.route('/<int:order_id>/delete', methods=['POST'])
+def delete_order(order_id):
+    """Soft delete an order"""
+    order = Order.query.get_or_404(order_id)
     
     if order.status not in [OrderStatus.PENDING, OrderStatus.READY]:
-        flash('Can only delete Pending or Ready orders!', 'danger')
-        return redirect(url_for('orders.list_orders'))
+        flash('Can only delete Pending or Ready orders.', 'error')
+        return redirect(url_for('orders.order_list'))
     
-    if request.method == 'POST':
-        reason = request.form.get('delete_reason')
-        note = request.form.get('delete_note')
-        
-        order.soft_delete(reason, note)
-        db.session.commit()
-        
-        flash('Order deleted successfully!', 'success')
-        return redirect(url_for('orders.list_orders'))
+    reason = request.form.get('delete_reason')
+    note = request.form.get('delete_note')
     
-    return render_template('orders/delete_confirm.html', order=order)
+    order.soft_delete(reason=reason, note=note)
+    db.session.commit()
+    
+    flash(f'Order #{order.id} moved to trash.', 'warning')
+    return redirect(url_for('orders.order_list'))
 
-@orders_bp.route('/<int:id>/status', methods=['POST'])
-def update_status(id):
+@orders_bp.route('/<int:order_id>/status', methods=['POST'])
+def update_status(order_id):
     """Update order status"""
-    order = Order.query.get_or_404(id)
+    order = Order.query.get_or_404(order_id)
     new_status = request.form.get('status')
     
-    if new_status:
-        order.status = getattr(OrderStatus, new_status.upper())
+    if new_status in [s.value for s in OrderStatus]:
+        order.status = OrderStatus(new_status)
         db.session.commit()
-        flash(f'Order status updated to {new_status}!', 'success')
+        flash(f'Order #{order.id} status updated to {new_status}.', 'success')
+    else:
+        flash('Invalid status.', 'error')
     
-    return redirect(url_for('orders.view_order', id=id))
+    return redirect(url_for('orders.order_view', order_id=order.id))
 
-@orders_bp.route('/<int:id>/payment', methods=['POST'])
-def update_payment(id):
+@orders_bp.route('/<int:order_id>/payment', methods=['POST'])
+def update_payment(order_id):
     """Update payment status"""
-    order = Order.query.get_or_404(id)
+    order = Order.query.get_or_404(order_id)
     new_status = request.form.get('payment_status')
     
-    if new_status:
-        order.payment_status = getattr(PaymentStatus, new_status.upper())
+    if new_status in [s.value for s in PaymentStatus]:
+        order.payment_status = PaymentStatus(new_status)
         db.session.commit()
-        flash(f'Payment status updated to {new_status}!', 'success')
+        flash(f'Order #{order.id} payment status updated.', 'success')
+    else:
+        flash('Invalid payment status.', 'error')
     
-    return redirect(url_for('orders.view_order', id=id))
+    return redirect(url_for('orders.order_view', order_id=order.id))
 
 @orders_bp.route('/trash')
-def trash():
+def order_trash():
     """View soft-deleted orders"""
     orders = Order.query.filter_by(is_deleted=True).order_by(Order.deleted_at.desc()).all()
-    return render_template('orders/trash.html', orders=orders)
+    return render_template('orders/order_trash.html', orders=orders)
 
-@orders_bp.route('/<int:id>/restore', methods=['POST'])
-def restore_order(id):
-    """Restore soft-deleted order"""
-    order = Order.query.get_or_404(id)
+@orders_bp.route('/trash/<int:order_id>/restore', methods=['POST'])
+def restore_order(order_id):
+    """Restore a soft-deleted order"""
+    order = Order.query.get_or_404(order_id)
     
     if not order.is_deleted:
-        flash('Order is not deleted!', 'danger')
-        return redirect(url_for('orders.list_orders'))
+        flash('Order is not deleted.', 'error')
+        return redirect(url_for('orders.order_trash'))
     
     order.is_deleted = False
     order.deleted_at = None
     order.delete_reason = None
     order.delete_note = None
-    
     db.session.commit()
-    flash('Order restored successfully!', 'success')
-    return redirect(url_for('orders.trash'))
+    
+    flash(f'Order #{order.id} restored successfully!', 'success')
+    return redirect(url_for('orders.order_trash'))
 
-# API endpoint for getting product variants (for AJAX)
+# API Endpoints for AJAX
 @orders_bp.route('/api/variants/<int:product_id>')
 def get_variants(product_id):
-    """Get variants for a product"""
-    order_type = request.args.get('order_type', 'retail')
+    """Get variants for a product (API for AJAX)"""
     variants = ProductVariant.query.filter_by(product_id=product_id, is_active=True).all()
     
+    # Serialize manually to avoid JSON errors
     result = []
     for v in variants:
-        price = v.retail_price if order_type == 'retail' else v.wholesale_price
         result.append({
             'id': v.id,
             'weight_label': v.weight_label,
-            'price': float(price)
+            'retail_price': float(v.retail_price),
+            'wholesale_price': float(v.wholesale_price)
+        })
+    
+    return jsonify(result)
+
+@orders_bp.route('/api/customers/search')
+def search_customers():
+    """Search customers by name or phone (API for AJAX)"""
+    query = request.args.get('q', '')
+    if not query:
+        return jsonify([])
+    
+    customers = Customer.query.filter(
+        or_(
+            Customer.name.ilike(f'%{query}%'),
+            Customer.phone.like(f'%{query}%')
+        )
+    ).limit(10).all()
+    
+    # Serialize manually
+    result = []
+    for c in customers:
+        result.append({
+            'id': c.id,
+            'name': c.name,
+            'phone': c.phone
         })
     
     return jsonify(result)
