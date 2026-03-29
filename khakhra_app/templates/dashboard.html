@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Khakhra Business{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📊 Dashboard</h2>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-stat border-primary shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-primary">Today's Orders</h5>
+                <h2 class="mb-0">{{ today_orders }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stat border-success shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-success">Today's Sales</h5>
+                <h2 class="mb-0">₹{{ "%.2f"|format(today_sales|float) }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stat border-info shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-info">Pending Manufacturing</h5>
+                <h2 class="mb-0">{{ pending_manufacturing }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card card-stat border-warning shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-warning">Ready for Delivery</h5>
+                <h2 class="mb-0">{{ ready_for_delivery }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Orders Table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">📋 Recent Orders</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_orders %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td><a href="{{ url_for('orders.view_order', id=order.id) }}">#{{ order.id }}</a></td>
+                        <td>{{ order.customer.name }}</td>
+                        <td>{{ order.order_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>₹{{ "%.2f"|format(order.total_amount|float) }}</td>
+                        <td>
+                            <span class="badge badge-{{ order.status.value }}">{{ order.status.value|title }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center mt-3">
+            <a href="{{ url_for('orders.list_orders') }}" class="btn btn-outline-primary">View All Orders</a>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">No orders yet. <a href="{{ url_for('orders.create_order') }}">Create your first order!</a></p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

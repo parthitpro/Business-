@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Products - Khakhra Business{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📦 Products Catalog</h2>
+    <a href="{{ url_for('products.add_product') }}" class="btn btn-primary">
+        ➕ Add Product
+    </a>
+</div>
+
+{% if products %}
+<div class="row">
+    {% for product in products %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ product.name }}</h5>
+                <div>
+                    <a href="{{ url_for('products.edit_product', id=product.id) }}" 
+                       class="btn btn-sm btn-outline-primary">Edit</a>
+                    <form method="POST" action="{{ url_for('products.delete_product', id=product.id) }}" 
+                          class="d-inline" onsubmit="return confirm('Delete this product?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6>Variants:</h6>
+                {% if product.variants %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Weight</th>
+                                <th>Retail</th>
+                                <th>Wholesale</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for variant in product.variants %}
+                            <tr>
+                                <td>{{ variant.weight_label }}</td>
+                                <td>₹{{ "%.2f"|format(variant.retail_price|float) }}</td>
+                                <td>₹{{ "%.2f"|format(variant.wholesale_price|float) }}</td>
+                                <td>
+                                    {% if variant.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No variants defined.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-info">
+    No products found. <a href="{{ url_for('products.add_product') }}">Add your first product!</a>
+</div>
+{% endif %}
+{% endblock %}

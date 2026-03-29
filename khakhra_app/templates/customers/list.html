@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Customers - Khakhra Business{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>👥 Customers</h2>
+    <div>
+        <a href="{{ url_for('customers.import_csv') }}" class="btn btn-outline-success">
+            📥 Import CSV
+        </a>
+        <a href="{{ url_for('customers.add_customer') }}" class="btn btn-primary">
+            ➕ Add Customer
+        </a>
+    </div>
+</div>
+
+<!-- Search Form -->
+<form method="GET" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control" 
+               placeholder="Search by name or phone..." 
+               value="{{ search }}">
+        <button type="submit" class="btn btn-outline-primary">Search</button>
+        {% if search %}
+        <a href="{{ url_for('customers.list_customers') }}" class="btn btn-outline-secondary">Clear</a>
+        {% endif %}
+    </div>
+</form>
+
+<!-- Customers Table -->
+<div class="card shadow-sm">
+    <div class="card-body">
+        {% if customers %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for customer in customers %}
+                    <tr>
+                        <td>{{ customer.id }}</td>
+                        <td>{{ customer.name }}</td>
+                        <td>{{ customer.phone }}</td>
+                        <td>{{ customer.address or '-' }}</td>
+                        <td>{{ customer.created_at.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('customers.edit_customer', id=customer.id) }}" 
+                               class="btn btn-sm btn-outline-primary">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">No customers found. 
+            {% if search %}
+            Try a different search term.
+            {% else %}
+            <a href="{{ url_for('customers.add_customer') }}">Add your first customer!</a> or 
+            <a href="{{ url_for('customers.import_csv') }}">import from CSV</a>.
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

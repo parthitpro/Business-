@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit' if customer else 'Add' }} Customer - Khakhra Business{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">{{ '✏️ Edit' if customer else '➕ Add' }} Customer</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ customer.name if customer else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone *</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" 
+                               value="{{ customer.phone if customer else '' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="address" class="form-label">Address</label>
+                        <textarea class="form-control" id="address" name="address" 
+                                  rows="3">{{ customer.address if customer else '' }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            {{ 'Update' if customer else 'Add' }} Customer
+                        </button>
+                        <a href="{{ url_for('customers.list_customers') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

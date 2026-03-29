@@ -1,0 +1,50 @@
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py~
+*.py.class
+*.py.backup
+*.swp
+*.swo
+
+# Logs
+*.log
+server.log
+
+# Database
+khakhra.db
+
+# Environment
+.env
+.env.local
+.env.*
+.venv/
+venv/
+ENV/
+
+# Dependencies
+pip-log.txt
+pip-wheel-metadata/
+requirements.log
+*.egg-info/
+.installed.cfg
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage/
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+```
