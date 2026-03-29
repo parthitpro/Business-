@@ -89,9 +89,17 @@ def create_order():
     customers = Customer.query.order_by(Customer.name).all()
     products = Product.query.all()
     
+    # Serialize products for JSON (fixes "not JSON serializable" error)
+    products_data = []
+    for p in products:
+        products_data.append({
+            'id': p.id,
+            'name': p.name
+        })
+    
     return render_template('orders/form.html', 
                          customers=customers, 
-                         products=products,
+                         products=products_data,
                          order=None)
 
 @orders_bp.route('/<int:id>')
@@ -153,9 +161,17 @@ def edit_order(id):
     customers = Customer.query.order_by(Customer.name).all()
     products = Product.query.all()
     
+    # Serialize products for JSON (fixes "not JSON serializable" error)
+    products_data = []
+    for p in products:
+        products_data.append({
+            'id': p.id,
+            'name': p.name
+        })
+    
     return render_template('orders/form.html', 
                          customers=customers, 
-                         products=products,
+                         products=products_data,
                          order=order)
 
 @orders_bp.route('/<int:id>/delete', methods=['GET', 'POST'])
