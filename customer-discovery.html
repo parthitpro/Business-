@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Discovery Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a08;
+    --surface: #111110;
+    --card: #181816;
+    --border: #2a2a26;
+    --accent: #e8c547;
+    --accent2: #4ade80;
+    --accent3: #f97316;
+    --text: #e8e6df;
+    --muted: #7a7a6e;
+    --red: #ef4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.4;
+  }
+
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 60px 24px 100px;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 64px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .header-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .header-label::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(56px, 10vw, 96px);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  h1 span {
+    color: var(--accent);
+    display: block;
+  }
+
+  .header-desc {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+    border-left: 2px solid var(--border);
+    padding-left: 16px;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 56px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .stat {
+    flex: 1;
+    padding: 20px 24px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Sections */
+  .section {
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .phase-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--bg);
+    background: var(--accent);
+    padding: 3px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+
+  .phase-num.green { background: var(--accent2); }
+  .phase-num.orange { background: var(--accent3); }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+
+  .section-goal {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: auto;
+    text-align: right;
+  }
+
+  /* Questions */
+  .questions {
+    display: grid;
+    gap: 8px;
+  }
+
+  .question {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: default;
+  }
+
+  .question:hover {
+    border-color: var(--accent);
+    background: #1e1e1a;
+  }
+
+  .q-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 24px;
+    padding-top: 2px;
+  }
+
+  .q-text {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.55;
+  }
+
+  .q-star {
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--accent);
+    padding-top: 2px;
+  }
+
+  /* How to section */
+  .how-to {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .how-to h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .how-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .how-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .how-icon {
+    font-size: 16px;
+    min-width: 24px;
+  }
+
+  .how-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .how-text strong {
+    color: var(--text);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  /* Flags */
+  .flags {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .flag-box {
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .flag-box.red-box {
+    background: #1a0f0f;
+    border-color: #3a1a1a;
+  }
+
+  .flag-box.green-box {
+    background: #0f1a12;
+    border-color: #1a3a22;
+  }
+
+  .flag-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .flag-title.red { color: var(--red); }
+  .flag-title.green { color: var(--accent2); }
+
+  .flag-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .flag-item:last-child { margin-bottom: 0; }
+
+  .flag-item.red-item { color: #f87171; }
+  .flag-item.green-item { color: #86efac; }
+
+  /* Dream question highlight */
+  .dream-q {
+    background: linear-gradient(135deg, #1e1a0a, #1a1e0a);
+    border: 1px solid #3a3510;
+    border-radius: 8px;
+    padding: 32px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .dream-q::before {
+    content: '★';
+    position: absolute;
+    right: 24px;
+    top: 24px;
+    font-size: 48px;
+    color: var(--accent);
+    opacity: 0.15;
+  }
+
+  .dream-q .phase-num {
+    margin-bottom: 16px;
+    display: inline-block;
+  }
+
+  .dream-q h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .dream-question {
+    font-size: 18px;
+    color: var(--text);
+    line-height: 1.6;
+    font-style: italic;
+    font-weight: 300;
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    margin-bottom: 16px;
+  }
+
+  .dream-why {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Footer CTA */
+  .cta {
+    background: var(--accent);
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .cta h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    color: var(--bg);
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+
+  .cta p {
+    font-size: 14px;
+    color: #3a3000;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section:nth-child(1) { animation-delay: 0.1s; }
+  .section:nth-child(2) { animation-delay: 0.15s; }
+  .section:nth-child(3) { animation-delay: 0.2s; }
+  .section:nth-child(4) { animation-delay: 0.25s; }
+  .section:nth-child(5) { animation-delay: 0.3s; }
+  .section:nth-child(6) { animation-delay: 0.35s; }
+  .section:nth-child(7) { animation-delay: 0.4s; }
+
+  @media (max-width: 600px) {
+    .how-grid { grid-template-columns: 1fr; }
+    .flags { grid-template-columns: 1fr; }
+    .stats { flex-direction: column; }
+    .stat { border-right: none; border-bottom: 1px solid var(--border); }
+    .stat:last-child { border-bottom: none; }
+    .section-goal { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-label">Customer Discovery Playbook</div>
+    <h1>Ask.<span>Don't Pitch.</span></h1>
+    <p class="header-desc">Talk to 10 local businesses. Listen more than you speak. The problem that shows up 7 out of 10 times — that's what you build.</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">40</div>
+      <div class="stat-label">Questions Total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">8</div>
+      <div class="stat-label">Phases</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">20</div>
+      <div class="stat-label">Min Per Chat</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">10</div>
+      <div class="stat-label">Businesses Min</div>
+    </div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="phase-num">PHASE 01</span>
+      <span class="section-title">Warm Up</span>
+      <span class="section-goal">Build trust first</span>
+    </div>
+    <div class="questions">
+      <div class="question"><span class="q-num">01</span><span class="q-text">How long have you been running this business?</span></div>
+      <div class="question"><span class="q-num">02</span><span class="q-text">How many people work with you?</span></div>
+      <div class="question"><span class="q-num">03</span><span class="q-text">Walk me through a typical day — what does your morning look like?</span></div>
+      <div class="question"><span class="q-num">04</span><span class="q-text">What part of the business do YOU personally handle every day?</span></div>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="phase-num">PHASE 02</span>
+      <span class="section-title">Find The Pain</span>
+      <span class="section-goal">Find what hurts</span>
+    </div>
+    <div class="questions">
+      <div class="question"><span class="q-num">05</span><span class="q-text">What's the most frustrating part of running this business?</span></div>
+      <div class="question"><span class="q-num">06</span><span class="q-text">What keeps you up at night about the business?</span></div>
+      <div class="question"><span class="q-num">07</span><span class="q-text">What do you do today that you wish someone else could handle?</span></div>
+      <div class="question"><span class="q-num">08</span><span class="q-text">Where do you feel you're losing money but don't know how to fix it?</span></div>
+      <div class="question"><span class="q-num">09</span><span class="q-text">If I gave you one extra hour every day, what would you do with it?</span></div>
+      <div class="question"><span class="q-num">10</span><span class="q-text">What's something that breaks down or goes wrong repeatedly?</span></div>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="phase-num">PHASE 03</span>
+      <span class="section-title">Leads & Customers</span>
+      <span class="section-goal">Find revenue leaks</span>
+    </div>
+    <div class="questions">
+      <div class="question"><span class="q-num">11</span><span class="q-text">How do new customers find you?</span></div>
+      <div class="question"><span class="q-num">12</span><span class="q-text">How many inquiries do you get per day — calls, WhatsApp, walk-ins?</span></div>
+      <div class="question"><span class="q-num">13</span><span class="q-text">What happens when you miss a call or can't reply immediately?</span></div>
+      <div class="question"><span class="q-num">14</span><span class="q-text">How do you follow up with someone who showed interest but didn't buy?</span></div>
+      <div class="question"><span class="q-num">15</span><span class="q-text">How many leads do you think you lose every month?</span></div>
+      <div class="question"><span class="q-num">16</span><span class="q-text">Do customers come back on their own or do you have to remind them?</span></div>
+      <div class="question"><span class="q-num">17</span><span class="q-text">How do you stay in touch with old customers?</span></div>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="phase-num">PHASE 04</span>
+      <span class="section-title">Marketing & Visibility</span>
+      <span class="section-goal">Spot content gap</span>
+    </div>
+    <div class="questions">
+      <div class="question"><span class="q-num">18</span><span class="q-text">Are you on Instagram, Facebook, Google?</span></div>
+      <div class="question"><span class="q-num">19</span><span class="q-text">Who manages your social media right now?</span></div>
+      <div class="question"><span class="q-num">20</span><span class="q-text">How often do you post content?</span></div>
+      <div class="question"><span class="q-num">21</span><span class="q-text">Do you run any ads? How do you decide what to spend?</span></div>
+      <div class="question"><span class="q-num">22</span><span class="q-text">How do customers find out about your offers or new products?</span></div>
+      <div class="question"><span class="q-num">23</span><span class="q-text">Do you ask customers for Google reviews? What happens?</span></div>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="phase-num">PHASE 05</span>
+      <span class="section-title">Operations & Staff</span>
+      <span class="section-goal">Find manual work</span>
+    </div>
+    <div class="questions">
+      <div class="question"><span class="q-num">24</span><span class="q-text">How do you track orders, payments, and deliveries?</span></div>
+      <div class="question"><span class="q-num">25</span><span class="q-text">Do you use any software or is it all WhatsApp and Excel?</span></div>
+      <div class="question"><span class="q-num">26</span><span class="q-text">How do you know if your staff is doing their job?</span></div>
+      <div class="question"><span class="q-num">27</span><span class="q-text">What happens when you're not there — does the business run smoothly?</span></div>
+      <div class="question"><span class="q-num">28</span><span class="q-text">How do you handle stock — do you ever run out or overstock?</span></div>
+      <div class="question"><span class="q-num">29</span><span class="q-text">How long does it take to train a new employee?</span></div>
+    </div>
+  </div>
+
+  <!-- Phase 6 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="phase-num">PHASE 06</span>
+      <span class="section-title">Money & Numbers</span>
+      <span class="section-goal">Build trust first</span>
+    </div>
+    <div class="questions">
+      <div class="question"><span class="q-num">30</span><span class="q-text">Do you have a clear picture of your profit every month?</span></div>
+      <div class="question"><span class="q-num">31</span><span class="q-text">How do you track expenses — any system or rough estimate?</span></div>
+      <div class="question"><span class="q-num">32</span><span class="q-text">Are there months where business is very slow? How do you manage?</span></div>
+      <div class="question"><span class="q-num">33</span><span class="q-text">Do you give credit to customers? How do you track who owes what?</span></div>
+      <div class="question"><span class="q-num">34</span><span class="q-text">Have you ever lost money because of a mistake you could have avoided?</span></div>
+    </div>
+  </div>
+
+  <!-- Phase 7 -->
+  <div class="section">
+    <div class="section-header">
+      <span class="phase-num green">PHASE 07</span>
+      <span class="section-title">Tech Awareness</span>
+      <span class="section-goal">Test readiness</span>
+    </div>
+    <div class="questions">
+      <div class="question"><span class="q-num">35</span><span class="q-text">Do you use any apps or tools to run the business?</span></div>
+      <div class="question"><span class="q-num">36</span><span class="q-text">Have you ever tried automating anything — even simple things?</span></div>
+      <div class="question"><span class="q-num">37</span><span class="q-text">Have you heard of businesses using AI or WhatsApp bots?</span></div>
+      <div class="question"><span class="q-num">38</span><span class="q-text">If something could save you 2 hours every day, what would that be worth to you?</span></div>
+      <div class="question"><span class="q-num">39</span><span class="q-text">What would make you say yes to a new tool — what's your biggest concern?</span></div>
+    </div>
+  </div>
+
+  <!-- Dream Question -->
+  <div class="dream-q">
+    <span class="phase-num orange">PHASE 08 — MOST IMPORTANT</span>
+    <h3>The Dream Question</h3>
+    <div class="dream-question">
+      "If your business was running perfectly 2 years from now — what would that look like? What would YOU be doing every day?"
+    </div>
+    <div class="dream-why">→ Always end with this. Their answer tells you exactly what to build.</div>
+  </div>
+
+  <!-- How to run -->
+  <div class="how-to">
+    <h3>How To Run The Conversation</h3>
+    <div class="how-grid">
+      <div class="how-item">
+        <span class="how-icon">⏱</span>
+        <div class="how-text"><strong>Time needed</strong>20–30 minutes per business</div>
+      </div>
+      <div class="how-item">
+        <span class="how-icon">🎯</span>
+        <div class="how-text"><strong>Your attitude</strong>Curious student, not salesman</div>
+      </div>
+      <div class="how-item">
+        <span class="how-icon">🚫</span>
+        <div class="how-text"><strong>Never say</strong>"I have a solution for this"</div>
+      </div>
+      <div class="how-item">
+        <span class="how-icon">✅</span>
+        <div class="how-text"><strong>Always say</strong>"Interesting, tell me more about that"</div>
+      </div>
+      <div class="how-item">
+        <span class="how-icon">📝</span>
+        <div class="how-text"><strong>Take notes</strong>On phone, openly — they feel heard</div>
+      </div>
+      <div class="how-item">
+        <span class="how-icon">🔚</span>
+        <div class="how-text"><strong>End with</strong>"Can I come back and share something I'm working on?"</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flags -->
+  <div class="flags">
+    <div class="flag-box red-box">
+      <div class="flag-title red">🚩 Red Flags — Move On</div>
+      <div class="flag-item red-item">❌ "We're managing fine, no problems"</div>
+      <div class="flag-item red-item">❌ "I don't trust technology"</div>
+      <div class="flag-item red-item">❌ "My son/nephew handles all this"</div>
+      <div class="flag-item red-item">❌ "We've always done it this way"</div>
+    </div>
+    <div class="flag-box green-box">
+      <div class="flag-title green">✅ Green Flags — This Is Your Customer</div>
+      <div class="flag-item green-item">✅ "I'm always so busy I can't think straight"</div>
+      <div class="flag-item green-item">✅ "I lose so many leads, I know it"</div>
+      <div class="flag-item green-item">✅ "My WhatsApp is flooded and I can't reply"</div>
+      <div class="flag-item green-item">✅ "I wish I didn't have to be here every day"</div>
+      <div class="flag-item green-item">✅ "I spend hours on things that feel pointless"</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <h3>Do 10 Conversations This Week</h3>
+    <p>The problem that comes up 7 out of 10 times — that's what you build. No planning beats real data.</p>
+  </div>
+
+</div>
+</body>
+</html>
